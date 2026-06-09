@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parking Lot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent: #f0c14b;
+    --accent-dim: rgba(240,193,75,0.12);
+    --text: #e8e8e8;
+    --muted: #666;
+    --danger: #e05c5c;
+    --green: #5ce07a;
+    --tag-bug: #e05c5c;
+    --tag-idea: #5c9ce0;
+    --tag-task: #5ce07a;
+    --tag-note: #c05ce0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,193,75,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,193,75,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 100px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2.4rem;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .header .subtitle {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .count-badge {
+    margin-left: auto;
+    font-size: 0.65rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+
+  /* Capture Panel */
+  .capture-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
+    padding: 24px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .capture-panel::before {
+    content: 'DUMP IT HERE';
+    position: absolute;
+    top: -9px;
+    left: 16px;
+    background: var(--surface);
+    padding: 0 8px;
+    font-size: 0.55rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+  }
+
+  /* Tabs */
+  .input-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-icon { font-size: 0.9rem; }
+
+  /* Input panels */
+  .input-panel { display: none; }
+  .input-panel.active { display: block; }
+
+  .text-area {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    padding: 14px;
+    resize: none;
+    min-height: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .text-area:focus { border-color: var(--accent); }
+  .text-area::placeholder { color: var(--muted); }
+
+  /* Voice panel */
+  .voice-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .record-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .record-btn:hover { background: var(--accent-dim); }
+
+  .record-btn.recording {
+    border-color: var(--danger);
+    animation: pulse-ring 1.2s ease-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(224,92,92,0.4); }
+    70% { box-shadow: 0 0 0 12px rgba(224,92,92,0); }
+    100% { box-shadow: 0 0 0 0 rgba(224,92,92,0); }
+  }
+
+  .voice-status {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .voice-status.active { color: var(--danger); }
+
+  .voice-timer {
+    font-size: 1.2rem;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    display: none;
+  }
+
+  .voice-timer.visible { display: block; }
+
+  .audio-waveform {
+    width: 100%;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .audio-waveform.visible { opacity: 1; }
+
+  .wave-bar {
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: wave 0.8s ease-in-out infinite alternate;
+    height: 4px;
+  }
+
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.15s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.05s; }
+  .wave-bar:nth-child(6) { animation-delay: 0.25s; }
+  .wave-bar:nth-child(7) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(8) { animation-delay: 0.3s; }
+
+  @keyframes wave {
+    from { height: 4px; }
+    to { height: 28px; }
+  }
+
+  .recordings-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .recording-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .recording-item audio {
+    flex: 1;
+    height: 28px;
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(10deg);
+  }
+
+  .remove-rec {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 2px 6px;
+  }
+
+  /* Image panel */
+  .image-drop-zone {
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .image-drop-zone:hover,
+  .image-drop-zone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .drop-text {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.8;
+  }
+
+  .drop-icon { font-size: 2rem; margin-bottom: 8px; }
+
+  .image-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .image-thumb {
+    position: relative;
+    width: 72px;
+    height: 72px;
+  }
+
+  .image-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 1px solid var(--border);
+  }
+
+  .remove-img {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Controls row */
+  .controls-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .field-label {
+    font-size: 0.55rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  select, input[type="datetime-local"], input[type="text"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    border-radius: 0;
+    -webkit-appearance: none;
+  }
+
+  select:focus, input:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  /* Reminder shortcuts */
+  .reminder-shortcuts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 160px;
+  }
+
+  .shortcuts-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .shortcut-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    padding: 5px 8px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .shortcut-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Park button */
+  .park-btn {
+    background: var(--accent);
+    color: #0e0e0e;
+    border: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.15s;
+    align-self: flex-end;
+    white-space: nowrap;
+  }
+
+  .park-btn:hover { background: #f5d070; transform: translateY(-1px); }
+  .park-btn:active { transform: translateY(0); }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+
+  .filter-chip {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    padding: 4px 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .filter-chip:hover { color: var(--text); border-color: #444; }
+  .filter-chip.active { border-color: var(--accent); color: var(--accent); }
+
+  /* Items grid */
+  .items-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    line-height: 2;
+    font-style: italic;
+  }
+
+  .empty-icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
+
+  /* Lot Item */
+  .lot-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    padding: 18px 20px;
+    position: relative;
+    transition: border-color 0.2s;
+    animation: slide-in 0.25s ease-out;
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .lot-item[data-type="bug"] { border-left-color: var(--tag-bug); }
+  .lot-item[data-type="idea"] { border-left-color: var(--tag-idea); }
+  .lot-item[data-type="task"] { border-left-color: var(--tag-task); }
+  .lot-item[data-type="note"] { border-left-color: var(--tag-note); }
+
+  .lot-item.done { opacity: 0.4; }
+
+  .item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .type-badge {
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .type-badge.bug { background: rgba(224,92,92,0.15); color: var(--tag-bug); }
+  .type-badge.idea { background: rgba(92,156,224,0.15); color: var(--tag-idea); }
+  .type-badge.task { background: rgba(92,224,122,0.15); color: var(--tag-task); }
+  .type-badge.note { background: rgba(192,92,224,0.15); color: var(--tag-note); }
+
+  .item-project {
+    font-size: 0.65rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .item-time {
+    margin-left: auto;
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+
+  .item-text {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 12px;
+    word-break: break-word;
+  }
+
+  .item-attachments {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .attach-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+
+  .attach-audio {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 0.6rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .attach-audio audio {
+    height: 24px;
+    filter: invert(1) sepia(1) saturate(3) hue-rotate(10deg);
+  }
+
+  .item-reminder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.62rem;
+    color: var(--accent);
+  }
+
+  .item-reminder.overdue { color: var(--danger); }
+  .reminder-icon { font-size: 0.75rem; }
+
+  .item-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .done-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .done-btn:hover { border-color: var(--green); color: var(--green); }
+
+  .delete-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: auto;
+  }
+
+  .delete-btn:hover { color: var(--danger); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent);
+    color: #0e0e0e;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 12px 24px;
+    transition: transform 0.3s ease;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Notification badge for overdue */
+  .overdue-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--danger);
+    color: white;
+    font-size: 0.55rem;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+
+  /* Hidden file input */
+  #image-input, #audio-input-hidden { display: none; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .controls-row { flex-direction: column; }
+    .park-btn { width: 100%; text-align: center; }
+    .header h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <h1>Parking Lot</h1>
+    <span class="subtitle">Idea capture</span>
+    <div class="count-badge" id="count-badge">0 parked</div>
+  </div>
+
+  <!-- Capture Panel -->
+  <div class="capture-panel">
+    <div class="input-tabs">
+      <button class="tab-btn active" data-tab="text" onclick="switchTab('text')">
+        <span class="tab-icon">✏️</span> Text
+      </button>
+      <button class="tab-btn" data-tab="voice" onclick="switchTab('voice')">
+        <span class="tab-icon">🎙️</span> Voice
+      </button>
+      <button class="tab-btn" data-tab="image" onclick="switchTab('image')">
+        <span class="tab-icon">🖼️</span> Image
+      </button>
+    </div>
+
+    <!-- Text panel -->
+    <div class="input-panel active" id="panel-text">
+      <textarea
+        class="text-area"
+        id="text-input"
+        placeholder="What's the thought? Bug, idea, thing to fix — just dump it..."
+        rows="4"
+      ></textarea>
+    </div>
+
+    <!-- Voice panel -->
+    <div class="input-panel" id="panel-voice">
+      <div class="voice-panel">
+        <div class="audio-waveform" id="waveform">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <button class="record-btn" id="record-btn" onclick="toggleRecording()">🎙️</button>
+        <div class="voice-timer" id="voice-timer">0:00</div>
+        <div class="voice-status" id="voice-status">Click to record</div>
+        <div class="recordings-list" id="recordings-list"></div>
+      </div>
+    </div>
+
+    <!-- Image panel -->
+    <div class="input-panel" id="panel-image">
+      <div class="image-drop-zone" id="drop-zone"
+        onclick="document.getElementById('image-input').click()"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondrop="handleDrop(event)"
+      >
+        <div class="drop-icon">📎</div>
+        <div class="drop-text">
+          Drop images here<br>or click to browse<br>
+          <span style="color:#444; font-size:0.6rem;">PNG, JPG, GIF, WEBP</span>
+        </div>
+      </div>
+      <div class="image-previews" id="image-previews"></div>
+      <input type="file" id="image-input" accept="image/*" multiple onchange="handleImageFiles(event)">
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-row">
+      <div class="field-group">
+        <span class="field-label">Type</span>
+        <select id="type-select">
+          <option value="idea">💡 Idea</option>
+          <option value="bug">🐛 Bug</option>
+          <option value="task">✅ Task</option>
+          <option value="note">📝 Note</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <span class="field-label">Project</span>
+        <input type="text" id="project-input" placeholder="e.g. Alix, Nextron..." list="projects-list">
+        <datalist id="projects-list"></datalist>
+      </div>
+
+      <div class="reminder-shortcuts">
+        <span class="field-label">Remind me in</span>
+        <div class="shortcuts-row">
+          <button class="shortcut-btn" onclick="setReminder(30)">30m</button>
+          <button class="shortcut-btn" onclick="setReminder(60)">1h</button>
+          <button class="shortcut-btn" onclick="setReminder(180)">3h</button>
+          <button class="shortcut-btn" onclick="setReminder(1440)">1d</button>
+          <button class="shortcut-btn" onclick="setReminder(4320)">3d</button>
+        </div>
+        <div class="shortcuts-row">
+          <input type="datetime-local" id="reminder-input" style="font-size:0.65rem; padding:5px 8px;">
+        </div>
+      </div>
+
+      <button class="park-btn" onclick="parkIdea()">⬇ Park It</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <span class="filter-label">Show:</span>
+    <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-chip" onclick="setFilter('idea', this)">💡 Ideas</button>
+    <button class="filter-chip" onclick="setFilter('bug', this)">🐛 Bugs</button>
+    <button class="filter-chip" onclick="setFilter('task', this)">✅ Tasks</button>
+    <button class="filter-chip" onclick="setFilter('note', this)">📝 Notes</button>
+    <button class="filter-chip" onclick="setFilter('overdue', this)" id="overdue-filter">
+      ⏰ Overdue
+    </button>
+  </div>
+
+  <!-- Items -->
+  <div class="items-grid" id="items-grid"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // State
+  let items = JSON.parse(localStorage.getItem('parking-lot') || '[]');
+  let activeTab = 'text';
+  let currentFilter = 'all';
+  let pendingImages = []; // {dataUrl, name}
+  let pendingAudios = []; // {blob, url, name}
+  let mediaRecorder = null;
+  let recordingChunks = [];
+  let recordingTimer = null;
+  let recordingSeconds = 0;
+  let isRecording = false;
+
+  // Init
+  render();
+  checkReminders();
+  setInterval(checkReminders, 60000);
+  buildProjectDatalist();
+
+  // Tab switching
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    document.querySelectorAll('.input-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`panel-${tab}`).classList.add('active');
+  }
+
+  // Reminder shortcuts
+  function setReminder(minutes) {
+    const d = new Date(Date.now() + minutes * 60000);
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+      .toISOString().slice(0, 16);
+    document.getElementById('reminder-input').value = local;
+  }
+
+  // Image handling
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.add('dragover');
+  }
+
+  function handleDragLeave(e) {
+    document.getElementById('drop-zone').classList.remove('dragover');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    addImages(files);
+  }
+
+  function handleImageFiles(e) {
+    addImages(Array.from(e.target.files));
+    e.target.value = '';
+  }
+
+  function addImages(files) {
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        pendingImages.push({ dataUrl: e.target.result, name: file.name });
+        renderImagePreviews();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderImagePreviews() {
+    const container = document.getElementById('image-previews');
+    container.innerHTML = pendingImages.map((img, i) => `
+      <div class="image-thumb">
+        <img src="${img.dataUrl}" alt="${img.name}">
+        <button class="remove-img" onclick="removeImage(${i})">×</button>
+      </div>
+    `).join('');
+  }
+
+  function removeImage(i) {
+    pendingImages.splice(i, 1);
+    renderImagePreviews();
+  }
+
+  // Voice recording
+  async function toggleRecording() {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      await startRecording();
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      recordingChunks = [];
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) recordingChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordingChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const name = `voice-${Date.now()}.webm`;
+        pendingAudios.push({ blob, url, name });
+        renderRecordingsList();
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      recordingSeconds = 0;
+
+      const btn = document.getElementById('record-btn');
+      btn.classList.add('recording');
+      btn.textContent = '⏹️';
+      document.getElementById('voice-status').textContent = 'Recording...';
+      document.getElementById('voice-status').classList.add('active');
+      document.getElementById('voice-timer').classList.add('visible');
+      document.getElementById('waveform').classList.add('visible');
+
+      recordingTimer = setInterval(() => {
+        recordingSeconds++;
+        const m = Math.floor(recordingSeconds / 60);
+        const s = recordingSeconds % 60;
+        document.getElementById('voice-timer').textContent =
+          `${m}:${s.toString().padStart(2, '0')}`;
+      }, 1000);
+
+    } catch (err) {
+      showToast('Microphone access denied');
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    clearInterval(recordingTimer);
+    isRecording = false;
+
+    const btn = document.getElementById('record-btn');
+    btn.classList.remove('recording');
+    btn.textContent = '🎙️';
+    document.getElementById('voice-status').textContent = 'Click to record';
+    document.getElementById('voice-status').classList.remove('active');
+    document.getElementById('voice-timer').classList.remove('visible');
+    document.getElementById('waveform').classList.remove('visible');
+  }
+
+  function renderRecordingsList() {
+    const container = document.getElementById('recordings-list');
+    container.innerHTML = pendingAudios.map((a, i) => `
+      <div class="recording-item">
+        <span>🎙️ clip ${i + 1}</span>
+        <audio controls src="${a.url}"></audio>
+        <button class="remove-rec" onclick="removeRecording(${i})">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function removeRecording(i) {
+    pendingAudios.splice(i, 1);
+    renderRecordingsList();
+  }
+
+  // Park
+  async function parkIdea() {
+    const text = document.getElementById('text-input').value.trim();
+    const type = document.getElementById('type-select').value;
+    const project = document.getElementById('project-input').value.trim();
+    const reminderVal = document.getElementById('reminder-input').value;
+
+    if (!text && pendingImages.length === 0 && pendingAudios.length === 0) {
+      showToast('Nothing to park yet.');
+      return;
+    }
+
+    // Convert pending audios to base64 for storage
+    const audioData = await Promise.all(pendingAudios.map(a =>
+      blobToBase64(a.blob).then(b64 => ({ b64, name: a.name }))
+    ));
+
+    const item = {
+      id: Date.now(),
+      text,
+      type,
+      project,
+      reminder: reminderVal ? new Date(reminderVal).toISOString() : null,
+      images: pendingImages.map(i => i.dataUrl),
+      audios: audioData,
+      createdAt: new Date().toISOString(),
+      done: false,
+    };
+
+    items.unshift(item);
+    save();
+    render();
+    buildProjectDatalist();
+
+    // Reset
+    document.getElementById('text-input').value = '';
+    document.getElementById('project-input').value = '';
+    document.getElementById('reminder-input').value = '';
+    pendingImages = [];
+    pendingAudios = [];
+    renderImagePreviews();
+    renderRecordingsList();
+    switchTab('text');
+
+    showToast('Parked. Back to work.');
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // Filter
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  // Render
+  function render() {
+    const grid = document.getElementById('items-grid');
+    const now = new Date();
+
+    let visible = items.filter(item => {
+      if (currentFilter === 'all') return !item.done;
+      if (currentFilter === 'overdue') {
+        return !item.done && item.reminder && new Date(item.reminder) < now;
+      }
+      return !item.done && item.type === currentFilter;
+    });
+
+    // Count badge
+    const total = items.filter(i => !i.done).length;
+    document.getElementById('count-badge').textContent =
+      `${total} parked`;
+
+    // Overdue count
+    const overdueCount = items.filter(i =>
+      !i.done && i.reminder && new Date(i.reminder) < now
+    ).length;
+    const overdueBtn = document.getElementById('overdue-filter');
+    if (overdueCount > 0) {
+      overdueBtn.innerHTML = `⏰ Overdue <span class="overdue-count">${overdueCount}</span>`;
+    } else {
+      overdueBtn.innerHTML = `⏰ Overdue`;
+    }
+
+    if (visible.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🅿️</div>
+          ${currentFilter === 'all'
+            ? 'Lot is empty.<br>Dump your first thought.'
+            : `No ${currentFilter}s parked.`}
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = visible.map(item => {
+      const created = new Date(item.createdAt);
+      const timeAgo = formatTimeAgo(created);
+      const isOverdue = item.reminder && new Date(item.reminder) < now;
+      const reminderText = item.reminder
+        ? formatReminder(new Date(item.reminder), isOverdue)
+        : null;
+
+      const typeEmoji = { idea: '💡', bug: '🐛', task: '✅', note: '📝' };
+
+      return `
+        <div class="lot-item" data-type="${item.type}" data-id="${item.id}">
+          <div class="item-header">
+            <span class="type-badge ${item.type}">${typeEmoji[item.type]} ${item.type}</span>
+            ${item.project ? `<span class="item-project">${item.project}</span>` : ''}
+            <span class="item-time">${timeAgo}</span>
+          </div>
+
+          ${item.text ? `<div class="item-text">${escHtml(item.text)}</div>` : ''}
+
+          ${item.images.length > 0 || item.audios.length > 0 ? `
+            <div class="item-attachments">
+              ${item.images.map(src => `
+                <img class="attach-thumb" src="${src}" onclick="openImage('${src}')" alt="attachment">
+              `).join('')}
+              ${item.audios.map((a, i) => `
+                <div class="attach-audio">
+                  🎙️
+                  <audio controls src="data:audio/webm;base64,${a.b64}"></audio>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          ${reminderText ? `
+            <div class="item-reminder ${isOverdue ? 'overdue' : ''}">
+              <span class="reminder-icon">⏰</span>
+              ${reminderText}
+            </div>
+          ` : ''}
+
+          <div class="item-footer">
+            <button class="done-btn" onclick="markDone(${item.id})">✓ Done with this</button>
+            <button class="delete-btn" onclick="deleteItem(${item.id})">✕ Delete</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function formatTimeAgo(date) {
+    const diff = Date.now() - date.getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    return `${d}d ago`;
+  }
+
+  function formatReminder(date, overdue) {
+    const diff = date.getTime() - Date.now();
+    if (overdue) {
+      const ago = Math.abs(diff);
+      const m = Math.floor(ago / 60000);
+      if (m < 60) return `Overdue by ${m}m`;
+      const h = Math.floor(m / 60);
+      return `Overdue by ${h}h`;
+    }
+    const m = Math.floor(diff / 60000);
+    if (m < 60) return `Remind in ${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `Remind in ${h}h`;
+    return `Remind ${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+  }
+
+  function markDone(id) {
+    const item = items.find(i => i.id === id);
+    if (item) { item.done = true; save(); render(); showToast('Cleared.'); }
+  }
+
+  function deleteItem(id) {
+    items = items.filter(i => i.id !== id);
+    save();
+    render();
+  }
+
+  function openImage(src) {
+    window.open(src, '_blank');
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+  }
+
+  // Reminders
+  function checkReminders() {
+    const now = new Date();
+    items.forEach(item => {
+      if (!item.done && item.reminder && !item._notified) {
+        const rt = new Date(item.reminder);
+        if (rt <= now) {
+          item._notified = true;
+          if (Notification.permission === 'granted') {
+            new Notification('Parking Lot', {
+              body: `${item.type.toUpperCase()}: ${item.text || '(attachment)'}`,
+              icon: '🅿️'
+            });
+          }
+        }
+      }
+    });
+    render();
+  }
+
+  // Request notification permission silently
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  // Project datalist
+  function buildProjectDatalist() {
+    const projects = [...new Set(items.map(i => i.project).filter(Boolean))];
+    document.getElementById('projects-list').innerHTML =
+      projects.map(p => `<option value="${p}">`).join('');
+  }
+
+  // Save
+  function save() {
+    try {
+      localStorage.setItem('parking-lot', JSON.stringify(items));
+    } catch(e) {
+      // Storage full — trim oldest done items
+      items = items.filter(i => !i.done).slice(0, 100);
+      localStorage.setItem('parking-lot', JSON.stringify(items));
+    }
+  }
+
+  // Toast
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Keyboard shortcut: Ctrl+Enter to park
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') parkIdea();
+  });
+</script>
+</body>
+</html>
