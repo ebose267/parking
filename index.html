@@ -2,1244 +2,1964 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Parking Lot</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-  :root {
-    --bg: #0e0e0e;
-    --surface: #161616;
-    --border: #2a2a2a;
-    --accent: #f0c14b;
-    --accent-dim: rgba(240,193,75,0.12);
-    --text: #e8e8e8;
-    --muted: #666;
-    --danger: #e05c5c;
-    --green: #5ce07a;
-    --tag-bug: #e05c5c;
-    --tag-idea: #5c9ce0;
-    --tag-task: #5ce07a;
-    --tag-note: #c05ce0;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Grid background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(240,193,75,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(240,193,75,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .app {
-    position: relative;
-    z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 40px 24px 100px;
-  }
-
-  /* Header */
-  .header {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    margin-bottom: 40px;
-  }
-
-  .header h1 {
-    font-family: 'Instrument Serif', serif;
-    font-size: 2.4rem;
-    color: var(--accent);
-    letter-spacing: -0.5px;
-  }
-
-  .header .subtitle {
-    font-size: 0.7rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-  }
-
-  .count-badge {
-    margin-left: auto;
-    font-size: 0.65rem;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    padding: 4px 10px;
-    border-radius: 2px;
-  }
-
-  /* Capture Panel */
-  .capture-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-top: 2px solid var(--accent);
-    padding: 24px;
-    margin-bottom: 32px;
-    position: relative;
-  }
-
-  .capture-panel::before {
-    content: 'DUMP IT HERE';
-    position: absolute;
-    top: -9px;
-    left: 16px;
-    background: var(--surface);
-    padding: 0 8px;
-    font-size: 0.55rem;
-    color: var(--accent);
-    letter-spacing: 3px;
-  }
-
-  /* Tabs */
-  .input-tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .tab-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    padding: 8px 16px;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .tab-btn:hover { color: var(--text); }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-  .tab-icon { font-size: 0.9rem; }
-
-  /* Input panels */
-  .input-panel { display: none; }
-  .input-panel.active { display: block; }
-
-  .text-area {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-    line-height: 1.6;
-    padding: 14px;
-    resize: none;
-    min-height: 100px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .text-area:focus { border-color: var(--accent); }
-  .text-area::placeholder { color: var(--muted); }
-
-  /* Voice panel */
-  .voice-panel {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .record-btn {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    border: 2px solid var(--accent);
-    background: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    transition: all 0.2s;
-    position: relative;
-  }
-
-  .record-btn:hover { background: var(--accent-dim); }
-
-  .record-btn.recording {
-    border-color: var(--danger);
-    animation: pulse-ring 1.2s ease-out infinite;
-  }
-
-  @keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 rgba(224,92,92,0.4); }
-    70% { box-shadow: 0 0 0 12px rgba(224,92,92,0); }
-    100% { box-shadow: 0 0 0 0 rgba(224,92,92,0); }
-  }
-
-  .voice-status {
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  .voice-status.active { color: var(--danger); }
-
-  .voice-timer {
-    font-size: 1.2rem;
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
-    display: none;
-  }
-
-  .voice-timer.visible { display: block; }
-
-  .audio-waveform {
-    width: 100%;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  .audio-waveform.visible { opacity: 1; }
-
-  .wave-bar {
-    width: 3px;
-    background: var(--accent);
-    border-radius: 2px;
-    animation: wave 0.8s ease-in-out infinite alternate;
-    height: 4px;
-  }
-
-  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
-  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
-  .wave-bar:nth-child(4) { animation-delay: 0.15s; }
-  .wave-bar:nth-child(5) { animation-delay: 0.05s; }
-  .wave-bar:nth-child(6) { animation-delay: 0.25s; }
-  .wave-bar:nth-child(7) { animation-delay: 0.1s; }
-  .wave-bar:nth-child(8) { animation-delay: 0.3s; }
-
-  @keyframes wave {
-    from { height: 4px; }
-    to { height: 28px; }
-  }
-
-  .recordings-list {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .recording-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 10px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-
-  .recording-item audio {
-    flex: 1;
-    height: 28px;
-    filter: invert(1) sepia(1) saturate(5) hue-rotate(10deg);
-  }
-
-  .remove-rec {
-    background: none;
-    border: none;
-    color: var(--danger);
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 2px 6px;
-  }
-
-  /* Image panel */
-  .image-drop-zone {
-    background: var(--bg);
-    border: 1px dashed var(--border);
-    padding: 32px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-
-  .image-drop-zone:hover,
-  .image-drop-zone.dragover {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-  }
-
-  .drop-text {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    line-height: 1.8;
-  }
-
-  .drop-icon { font-size: 2rem; margin-bottom: 8px; }
-
-  .image-previews {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  .image-thumb {
-    position: relative;
-    width: 72px;
-    height: 72px;
-  }
-
-  .image-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border: 1px solid var(--border);
-  }
-
-  .remove-img {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 18px;
-    height: 18px;
-    background: var(--danger);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 0.6rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Controls row */
-  .controls-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-    align-items: flex-end;
-  }
-
-  .field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex: 1;
-    min-width: 120px;
-  }
-
-  .field-label {
-    font-size: 0.55rem;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  select, input[type="datetime-local"], input[type="text"] {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    padding: 8px 12px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 100%;
-    border-radius: 0;
-    -webkit-appearance: none;
-  }
-
-  select:focus, input:focus { border-color: var(--accent); }
-  select option { background: var(--surface); }
-
-  /* Reminder shortcuts */
-  .reminder-shortcuts {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 160px;
-  }
-
-  .shortcuts-row {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-  }
-
-  .shortcut-btn {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    padding: 5px 8px;
-    cursor: pointer;
-    letter-spacing: 0.5px;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-
-  .shortcut-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  /* Park button */
-  .park-btn {
-    background: var(--accent);
-    color: #0e0e0e;
-    border: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 12px 28px;
-    cursor: pointer;
-    transition: all 0.15s;
-    align-self: flex-end;
-    white-space: nowrap;
-  }
-
-  .park-btn:hover { background: #f5d070; transform: translateY(-1px); }
-  .park-btn:active { transform: translateY(0); }
-
-  /* Filter bar */
-  .filter-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .filter-label {
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-right: 4px;
-  }
-
-  .filter-chip {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    padding: 4px 12px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.15s;
-  }
-
-  .filter-chip:hover { color: var(--text); border-color: #444; }
-  .filter-chip.active { border-color: var(--accent); color: var(--accent); }
-
-  /* Items grid */
-  .items-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-    font-size: 0.7rem;
-    letter-spacing: 1px;
-    line-height: 2;
-    font-style: italic;
-  }
-
-  .empty-icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.4; }
-
-  /* Lot Item */
-  .lot-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--border);
-    padding: 18px 20px;
-    position: relative;
-    transition: border-color 0.2s;
-    animation: slide-in 0.25s ease-out;
-  }
-
-  @keyframes slide-in {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .lot-item[data-type="bug"] { border-left-color: var(--tag-bug); }
-  .lot-item[data-type="idea"] { border-left-color: var(--tag-idea); }
-  .lot-item[data-type="task"] { border-left-color: var(--tag-task); }
-  .lot-item[data-type="note"] { border-left-color: var(--tag-note); }
-
-  .lot-item.done { opacity: 0.4; }
-
-  .item-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .type-badge {
-    font-size: 0.55rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 2px;
-  }
-
-  .type-badge.bug { background: rgba(224,92,92,0.15); color: var(--tag-bug); }
-  .type-badge.idea { background: rgba(92,156,224,0.15); color: var(--tag-idea); }
-  .type-badge.task { background: rgba(92,224,122,0.15); color: var(--tag-task); }
-  .type-badge.note { background: rgba(192,92,224,0.15); color: var(--tag-note); }
-
-  .item-project {
-    font-size: 0.65rem;
-    color: var(--muted);
-    font-style: italic;
-  }
-
-  .item-time {
-    margin-left: auto;
-    font-size: 0.6rem;
-    color: var(--muted);
-  }
-
-  .item-text {
-    font-size: 0.82rem;
-    line-height: 1.6;
-    color: var(--text);
-    margin-bottom: 12px;
-    word-break: break-word;
-  }
-
-  .item-attachments {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-
-  .attach-thumb {
-    width: 56px;
-    height: 56px;
-    object-fit: cover;
-    border: 1px solid var(--border);
-    cursor: pointer;
-  }
-
-  .attach-audio {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 6px 10px;
-    font-size: 0.6rem;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .attach-audio audio {
-    height: 24px;
-    filter: invert(1) sepia(1) saturate(3) hue-rotate(10deg);
-  }
-
-  .item-reminder {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.62rem;
-    color: var(--accent);
-  }
-
-  .item-reminder.overdue { color: var(--danger); }
-  .reminder-icon { font-size: 0.75rem; }
-
-  .item-footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
-
-  .done-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    padding: 4px 10px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.15s;
-  }
-
-  .done-btn:hover { border-color: var(--green); color: var(--green); }
-
-  .delete-btn {
-    background: none;
-    border: 1px solid transparent;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    padding: 4px 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    margin-left: auto;
-  }
-
-  .delete-btn:hover { color: var(--danger); }
-
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--accent);
-    color: #0e0e0e;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 1px;
-    padding: 12px 24px;
-    transition: transform 0.3s ease;
-    z-index: 100;
-    pointer-events: none;
-  }
-
-  .toast.show { transform: translateX(-50%) translateY(0); }
-
-  /* Notification badge for overdue */
-  .overdue-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--danger);
-    color: white;
-    font-size: 0.55rem;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    margin-left: 6px;
-    font-weight: 600;
-  }
-
-  /* Hidden file input */
-  #image-input, #audio-input-hidden { display: none; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); }
-
-  /* Responsive */
-  @media (max-width: 600px) {
-    .controls-row { flex-direction: column; }
-    .park-btn { width: 100%; text-align: center; }
-    .header h1 { font-size: 1.8rem; }
-  }
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --base: #090909;
+  --gold: #d4af37;
+  --gold-dim: rgba(212,175,55,0.15);
+  --gold-glow: rgba(212,175,55,0.25);
+  --glass: rgba(255,255,255,0.065);
+  --glass-border: rgba(255,255,255,0.11);
+  --glass-strong: rgba(255,255,255,0.10);
+  --text: #f0f0f0;
+  --text-2: rgba(240,240,240,0.55);
+  --text-3: rgba(240,240,240,0.30);
+  --red: #ff6b6b;
+  --blue: #5b9cf6;
+  --green: #5ce07a;
+  --purple: #b06ef3;
+  --radius: 20px;
+  --radius-sm: 12px;
+  --blur: blur(28px) saturate(180%);
+  --blur-sm: blur(16px) saturate(160%);
+}
+
+html { height: 100%; }
+
+body {
+  min-height: 100%;
+  background: var(--base);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Atmospheric background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(212,175,55,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 90%, rgba(91,156,246,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, #0f0e0d 0%, #090909 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Noise texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ─── Layout ─── */
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 20px 140px;
+}
+
+/* ─── Header ─── */
+.header {
+  padding: 52px 0 32px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wordmark-title {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 2rem;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.wordmark-sub {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sync-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border-radius: 100px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+.sync-dot.syncing {
+  background: var(--gold);
+  box-shadow: 0 0 6px var(--gold);
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+.sync-dot.offline {
+  background: var(--red);
+  box-shadow: 0 0 6px var(--red);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.count-pill {
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 100px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Filter bar ─── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-pill {
+  flex-shrink: 0;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border-radius: 100px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  -webkit-appearance: none;
+}
+
+.filter-pill:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+.filter-pill.active {
+  background: var(--gold-dim);
+  border-color: rgba(212,175,55,0.4);
+  color: var(--gold);
+}
+
+/* ─── Feed ─── */
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── Park card ─── */
+.park-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+  animation: card-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: default;
+}
+
+.park-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.08) inset;
+}
+
+.park-card.done {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Type accent strip */
+.park-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.park-card[data-type="idea"]::before   { background: var(--gold); }
+.park-card[data-type="bug"]::before    { background: var(--red); }
+.park-card[data-type="task"]::before   { background: var(--green); }
+.park-card[data-type="note"]::before   { background: var(--blue); }
+
+/* Subtle shimmer for overdue */
+.park-card.overdue {
+  border-color: rgba(255,107,107,0.25);
+}
+
+.park-card.overdue::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,107,107,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Card top row */
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.type-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.type-tag.idea   { background: rgba(212,175,55,0.15); color: var(--gold); }
+.type-tag.bug    { background: rgba(255,107,107,0.15); color: var(--red); }
+.type-tag.task   { background: rgba(92,224,122,0.15); color: var(--green); }
+.type-tag.note   { background: rgba(91,156,246,0.15); color: var(--blue); }
+
+.project-label {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.card-time {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card body */
+.card-text {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text);
+  margin-bottom: 14px;
+  word-break: break-word;
+}
+
+/* Attachments */
+.card-attachments {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.attach-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.attach-img:hover { transform: scale(1.05); }
+
+.attach-audio-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 100px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.attach-audio-pill audio {
+  height: 22px;
+  max-width: 160px;
+}
+
+/* Reminder pill */
+.reminder-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(212,175,55,0.1);
+  border: 1px solid rgba(212,175,55,0.2);
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gold);
+  margin-bottom: 14px;
+  font-variant-numeric: tabular-nums;
+  transition: all 0.5s ease;
+}
+
+.reminder-pill.warn {
+  background: rgba(255,150,50,0.12);
+  border-color: rgba(255,150,50,0.3);
+  color: #ff9632;
+}
+
+.reminder-pill.urgent {
+  background: rgba(255,107,107,0.12);
+  border-color: rgba(255,107,107,0.3);
+  color: var(--red);
+  animation: urgent-pulse 1.2s ease-in-out infinite;
+}
+
+.reminder-pill.overdue {
+  background: rgba(255,107,107,0.12);
+  border-color: rgba(255,107,107,0.3);
+  color: var(--red);
+}
+
+@keyframes urgent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(255,107,107,0); }
+}
+
+/* Card footer */
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.card-action {
+  background: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 100px;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+}
+
+.card-action:hover {
+  background: var(--glass-strong);
+  color: var(--text);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.card-action.done-action:hover {
+  background: rgba(92,224,122,0.12);
+  border-color: rgba(92,224,122,0.3);
+  color: var(--green);
+}
+
+.card-action.delete-action {
+  margin-left: auto;
+}
+
+.card-action.delete-action:hover {
+  background: rgba(255,107,107,0.1);
+  border-color: rgba(255,107,107,0.25);
+  color: var(--red);
+}
+
+/* ─── Empty state ─── */
+.empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-3);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+
+.empty-sub {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ─── FAB ─── */
+.fab {
+  position: fixed;
+  bottom: 36px;
+  right: 36px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  box-shadow:
+    0 8px 32px rgba(212,175,55,0.4),
+    0 2px 8px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.2) inset;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.fab:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 12px 40px rgba(212,175,55,0.5),
+    0 2px 8px rgba(0,0,0,0.5),
+    0 1px 0 rgba(255,255,255,0.2) inset;
+}
+
+.fab:active { transform: scale(0.96); }
+
+.fab-icon {
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: #090909;
+  font-weight: 700;
+}
+
+.fab.open .fab-icon { transform: rotate(45deg); }
+
+/* ─── Capture modal ─── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9,9,9,0.7);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-backdrop.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 201;
+  background: rgba(22, 22, 22, 0.92);
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  padding: 0 24px 48px;
+  max-height: 92vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow: 0 -24px 80px rgba(0,0,0,0.6);
+  scrollbar-width: none;
+}
+
+.modal::-webkit-scrollbar { display: none; }
+
+.modal.open {
+  transform: translateY(0);
+}
+
+/* Drag handle */
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 14px auto 24px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  margin-bottom: 24px;
+}
+
+/* Input tabs */
+.modal-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.modal-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.modal-tab.active {
+  background: var(--glass-strong);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Input panels */
+.input-panel { display: none; }
+.input-panel.active { display: block; }
+
+.capture-textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  padding: 16px;
+  resize: none;
+  min-height: 120px;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  -webkit-appearance: none;
+}
+
+.capture-textarea:focus {
+  border-color: rgba(212,175,55,0.4);
+  background: rgba(255,255,255,0.06);
+}
+
+.capture-textarea::placeholder { color: var(--text-3); }
+
+/* Voice panel */
+.voice-panel {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.record-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255,107,107,0.1);
+  border: 1.5px solid rgba(255,107,107,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.record-ring:hover {
+  background: rgba(255,107,107,0.18);
+  transform: scale(1.05);
+}
+
+.record-ring.recording {
+  background: rgba(255,107,107,0.2);
+  border-color: var(--red);
+  animation: record-pulse 1.4s ease-out infinite;
+}
+
+@keyframes record-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255,107,107,0.35); }
+  70% { box-shadow: 0 0 0 16px rgba(255,107,107,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,107,107,0); }
+}
+
+.record-icon { font-size: 24px; }
+
+.voice-label {
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.voice-label.active { color: var(--red); }
+
+.voice-timer {
+  font-size: 28px;
+  font-weight: 200;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  display: none;
+}
+
+.voice-timer.visible { display: block; }
+
+/* Waveform */
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.waveform.active { opacity: 1; }
+
+.wave-b {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--red);
+  height: 4px;
+  animation: wave-anim 0.6s ease-in-out infinite alternate;
+}
+
+.wave-b:nth-child(1) { animation-delay: 0.0s; }
+.wave-b:nth-child(2) { animation-delay: 0.1s; }
+.wave-b:nth-child(3) { animation-delay: 0.05s; }
+.wave-b:nth-child(4) { animation-delay: 0.15s; }
+.wave-b:nth-child(5) { animation-delay: 0.08s; }
+.wave-b:nth-child(6) { animation-delay: 0.12s; }
+.wave-b:nth-child(7) { animation-delay: 0.03s; }
+
+@keyframes wave-anim {
+  from { height: 4px; }
+  to { height: 28px; }
+}
+
+.recordings-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.rec-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 100px;
+  padding: 6px 8px 6px 14px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.rec-item audio {
+  flex: 1;
+  height: 24px;
+  max-width: 180px;
+}
+
+.rec-remove {
+  background: rgba(255,107,107,0.12);
+  border: none;
+  color: var(--red);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Image panel */
+.drop-zone {
+  background: rgba(255,255,255,0.03);
+  border: 1.5px dashed rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+  background: var(--gold-dim);
+  border-color: rgba(212,175,55,0.35);
+}
+
+.drop-zone-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.5; }
+
+.drop-zone-text {
+  font-size: 13px;
+  color: var(--text-3);
+  line-height: 1.7;
+}
+
+.img-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.img-thumb-wrap {
+  position: relative;
+  width: 68px;
+  height: 68px;
+}
+
+.img-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+}
+
+.img-thumb-remove {
+  position: absolute;
+  top: -5px; right: -5px;
+  width: 20px; height: 20px;
+  background: rgba(255,107,107,0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* ─── Modal metadata row ─── */
+.meta-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.meta-field {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.meta-select,
+.meta-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  width: 100%;
+  -webkit-appearance: none;
+  border-radius: 10px;
+}
+
+.meta-select:focus,
+.meta-input:focus {
+  border-color: rgba(212,175,55,0.4);
+}
+
+.meta-select option { background: #161616; }
+
+/* Reminder shortcuts */
+.shortcuts-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shortcuts-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.shortcut-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  -webkit-appearance: none;
+}
+
+.shortcut-btn:hover {
+  background: var(--gold-dim);
+  border-color: rgba(212,175,55,0.35);
+  color: var(--gold);
+}
+
+/* ─── Park button ─── */
+.park-btn {
+  width: 100%;
+  margin-top: 20px;
+  background: var(--gold);
+  color: #090909;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.35);
+  -webkit-appearance: none;
+}
+
+.park-btn:hover {
+  background: #e8c84a;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(212,175,55,0.4);
+}
+
+.park-btn:active { transform: scale(0.98); }
+
+/* ─── Alarm overlay ─── */
+.alarm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(9,9,9,0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.alarm-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.alarm-card {
+  background: rgba(255,107,107,0.08);
+  border: 1px solid rgba(255,107,107,0.3);
+  border-radius: 28px;
+  padding: 40px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow:
+    0 0 80px rgba(255,107,107,0.15),
+    0 24px 60px rgba(0,0,0,0.5);
+  animation: alarm-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes alarm-scale {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.alarm-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+  animation: alarm-ring 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes alarm-ring {
+  from { transform: rotate(-8deg); }
+  to   { transform: rotate(8deg); }
+}
+
+.alarm-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 10px;
+}
+
+.alarm-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.alarm-project {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-bottom: 28px;
+}
+
+.alarm-dismiss {
+  width: 100%;
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(255,107,107,0.4);
+}
+
+.alarm-dismiss:hover { background: #ff8080; }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(30,30,30,0.9);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  border-radius: 100px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ─── Config panel ─── */
+.config-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9,9,9,0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.config-modal.open { display: flex; }
+
+.config-card {
+  background: rgba(20,20,20,0.95);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  padding: 36px;
+  max-width: 420px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+
+.config-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.config-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.config-section {
+  margin-bottom: 20px;
+}
+
+.config-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+
+.config-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 8px;
+}
+
+.config-input:focus { border-color: rgba(212,175,55,0.4); }
+.config-input::placeholder { color: var(--text-3); }
+
+.config-save {
+  width: 100%;
+  background: var(--gold);
+  color: #090909;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.config-save:hover { background: #e8c84a; }
+
+.config-close {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  padding: 12px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.config-close:hover { background: var(--glass); }
+
+.config-status {
+  font-size: 11px;
+  color: var(--green);
+  margin-top: 4px;
+}
+
+/* Hidden inputs */
+#file-input { display: none; }
+
+/* Responsiveness */
+@media (max-width: 480px) {
+  .app { padding: 0 16px 140px; }
+  .header { padding: 40px 0 24px; }
+  .fab { bottom: 28px; right: 24px; }
+  .modal { padding: 0 18px 44px; }
+  .config-card { padding: 28px 22px; }
+}
 </style>
 </head>
 <body>
 
 <div class="app">
-  <!-- Header -->
   <div class="header">
-    <h1>Parking Lot</h1>
-    <span class="subtitle">Idea capture</span>
-    <div class="count-badge" id="count-badge">0 parked</div>
+    <div class="wordmark">
+      <div class="wordmark-title">Parking Lot</div>
+      <div class="wordmark-sub">Idea capture</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-badge" id="sync-badge" onclick="openConfig()" style="cursor:pointer;">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-label">Local</span>
+      </div>
+      <div class="count-pill" id="count-pill">0</div>
+    </div>
   </div>
 
-  <!-- Capture Panel -->
-  <div class="capture-panel">
-    <div class="input-tabs">
-      <button class="tab-btn active" data-tab="text" onclick="switchTab('text')">
-        <span class="tab-icon">✏️</span> Text
-      </button>
-      <button class="tab-btn" data-tab="voice" onclick="switchTab('voice')">
-        <span class="tab-icon">🎙️</span> Voice
-      </button>
-      <button class="tab-btn" data-tab="image" onclick="switchTab('image')">
-        <span class="tab-icon">🖼️</span> Image
-      </button>
-    </div>
+  <div class="filter-bar">
+    <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-pill" onclick="setFilter('idea',this)">💡 Ideas</button>
+    <button class="filter-pill" onclick="setFilter('bug',this)">🐛 Bugs</button>
+    <button class="filter-pill" onclick="setFilter('task',this)">✅ Tasks</button>
+    <button class="filter-pill" onclick="setFilter('note',this)">📝 Notes</button>
+    <button class="filter-pill" onclick="setFilter('overdue',this)" id="overdue-pill">⏰ Overdue</button>
+  </div>
 
-    <!-- Text panel -->
-    <div class="input-panel active" id="panel-text">
-      <textarea
-        class="text-area"
-        id="text-input"
-        placeholder="What's the thought? Bug, idea, thing to fix — just dump it..."
-        rows="4"
-      ></textarea>
-    </div>
+  <div class="feed" id="feed"></div>
+</div>
 
-    <!-- Voice panel -->
-    <div class="input-panel" id="panel-voice">
-      <div class="voice-panel">
-        <div class="audio-waveform" id="waveform">
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-        </div>
-        <button class="record-btn" id="record-btn" onclick="toggleRecording()">🎙️</button>
-        <div class="voice-timer" id="voice-timer">0:00</div>
-        <div class="voice-status" id="voice-status">Click to record</div>
-        <div class="recordings-list" id="recordings-list"></div>
+<!-- FAB -->
+<button class="fab" id="fab" onclick="toggleModal()">
+  <span class="fab-icon">+</span>
+</button>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="closeModal()"></div>
+
+<!-- Capture modal -->
+<div class="modal" id="capture-modal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">Park it.</div>
+
+  <div class="modal-tabs">
+    <button class="modal-tab active" onclick="switchTab('text',this)">✏️ Text</button>
+    <button class="modal-tab" onclick="switchTab('voice',this)">🎙 Voice</button>
+    <button class="modal-tab" onclick="switchTab('image',this)">🖼 Image</button>
+  </div>
+
+  <!-- Text -->
+  <div class="input-panel active" id="panel-text">
+    <textarea class="capture-textarea" id="text-input" placeholder="Dump the thought — bug, idea, fix, whatever…" rows="5"></textarea>
+  </div>
+
+  <!-- Voice -->
+  <div class="input-panel" id="panel-voice">
+    <div class="voice-panel">
+      <div class="waveform" id="waveform">
+        <div class="wave-b"></div><div class="wave-b"></div>
+        <div class="wave-b"></div><div class="wave-b"></div>
+        <div class="wave-b"></div><div class="wave-b"></div>
+        <div class="wave-b"></div>
       </div>
+      <div class="record-ring" id="record-ring" onclick="toggleRecording()">
+        <span class="record-icon" id="record-icon">🎙</span>
+      </div>
+      <div class="voice-timer" id="voice-timer">0:00</div>
+      <div class="voice-label" id="voice-label">Tap to record</div>
+      <div class="recordings-stack" id="recordings-stack"></div>
     </div>
+  </div>
 
-    <!-- Image panel -->
-    <div class="input-panel" id="panel-image">
-      <div class="image-drop-zone" id="drop-zone"
-        onclick="document.getElementById('image-input').click()"
-        ondragover="handleDragOver(event)"
-        ondragleave="handleDragLeave(event)"
-        ondrop="handleDrop(event)"
-      >
-        <div class="drop-icon">📎</div>
-        <div class="drop-text">
-          Drop images here<br>or click to browse<br>
-          <span style="color:#444; font-size:0.6rem;">PNG, JPG, GIF, WEBP</span>
-        </div>
-      </div>
-      <div class="image-previews" id="image-previews"></div>
-      <input type="file" id="image-input" accept="image/*" multiple onchange="handleImageFiles(event)">
+  <!-- Image -->
+  <div class="input-panel" id="panel-image">
+    <div class="drop-zone" id="drop-zone"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="handleDragOver(event)"
+      ondragleave="handleDragLeave(event)"
+      ondrop="handleDrop(event)">
+      <div class="drop-zone-icon">📎</div>
+      <div class="drop-zone-text">Drop images here<br>or tap to browse</div>
     </div>
+    <div class="img-previews" id="img-previews"></div>
+    <input type="file" id="file-input" accept="image/*" multiple onchange="handleImageFiles(event)">
+  </div>
 
-    <!-- Controls -->
-    <div class="controls-row">
-      <div class="field-group">
-        <span class="field-label">Type</span>
-        <select id="type-select">
-          <option value="idea">💡 Idea</option>
-          <option value="bug">🐛 Bug</option>
-          <option value="task">✅ Task</option>
-          <option value="note">📝 Note</option>
-        </select>
-      </div>
+  <!-- Meta -->
+  <div class="meta-row">
+    <div class="meta-field">
+      <span class="meta-label">Type</span>
+      <select class="meta-select" id="type-select">
+        <option value="idea">💡 Idea</option>
+        <option value="bug">🐛 Bug</option>
+        <option value="task">✅ Task</option>
+        <option value="note">📝 Note</option>
+      </select>
+    </div>
+    <div class="meta-field">
+      <span class="meta-label">Project</span>
+      <input class="meta-input" type="text" id="project-input" placeholder="Alix, Nextron…" list="project-list">
+      <datalist id="project-list"></datalist>
+    </div>
+  </div>
 
-      <div class="field-group">
-        <span class="field-label">Project</span>
-        <input type="text" id="project-input" placeholder="e.g. Alix, Nextron..." list="projects-list">
-        <datalist id="projects-list"></datalist>
-      </div>
-
-      <div class="reminder-shortcuts">
-        <span class="field-label">Remind me in</span>
+  <div class="meta-row" style="margin-top:14px;">
+    <div class="meta-field" style="flex:2;">
+      <span class="meta-label">Remind me in</span>
+      <div class="shortcuts-wrap">
         <div class="shortcuts-row">
+          <button class="shortcut-btn" onclick="setReminder(10)">10m</button>
           <button class="shortcut-btn" onclick="setReminder(30)">30m</button>
           <button class="shortcut-btn" onclick="setReminder(60)">1h</button>
           <button class="shortcut-btn" onclick="setReminder(180)">3h</button>
           <button class="shortcut-btn" onclick="setReminder(1440)">1d</button>
-          <button class="shortcut-btn" onclick="setReminder(4320)">3d</button>
         </div>
-        <div class="shortcuts-row">
-          <input type="datetime-local" id="reminder-input" style="font-size:0.65rem; padding:5px 8px;">
-        </div>
+        <input class="meta-input" type="datetime-local" id="reminder-input" style="font-size:12px; padding:8px 12px;">
       </div>
-
-      <button class="park-btn" onclick="parkIdea()">⬇ Park It</button>
     </div>
   </div>
 
-  <!-- Filter bar -->
-  <div class="filter-bar">
-    <span class="filter-label">Show:</span>
-    <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
-    <button class="filter-chip" onclick="setFilter('idea', this)">💡 Ideas</button>
-    <button class="filter-chip" onclick="setFilter('bug', this)">🐛 Bugs</button>
-    <button class="filter-chip" onclick="setFilter('task', this)">✅ Tasks</button>
-    <button class="filter-chip" onclick="setFilter('note', this)">📝 Notes</button>
-    <button class="filter-chip" onclick="setFilter('overdue', this)" id="overdue-filter">
-      ⏰ Overdue
-    </button>
-  </div>
+  <button class="park-btn" onclick="parkIt()">Park It</button>
+</div>
 
-  <!-- Items -->
-  <div class="items-grid" id="items-grid"></div>
+<!-- Alarm overlay -->
+<div class="alarm-overlay" id="alarm-overlay">
+  <div class="alarm-card">
+    <div class="alarm-icon">⏰</div>
+    <div class="alarm-label" id="alarm-label">Time's up</div>
+    <div class="alarm-title" id="alarm-title">Task title</div>
+    <div class="alarm-project" id="alarm-project"></div>
+    <button class="alarm-dismiss" onclick="dismissAlarm()">Dismiss</button>
+  </div>
+</div>
+
+<!-- Config modal -->
+<div class="config-modal" id="config-modal">
+  <div class="config-card">
+    <div class="config-title">Sync & Alerts</div>
+    <div class="config-sub">Connect to Google Sheets + Apps Script for cross-device sync and Telegram/ntfy notifications.</div>
+
+    <div class="config-section">
+      <div class="config-section-label">Apps Script Web App URL</div>
+      <input class="config-input" type="url" id="cfg-webapp" placeholder="https://script.google.com/macros/s/…/exec">
+    </div>
+
+    <div class="config-section">
+      <div class="config-section-label">Telegram Bot Token</div>
+      <input class="config-input" type="text" id="cfg-tg-token" placeholder="1234567890:ABCdef…">
+      <div class="config-section-label" style="margin-top:10px;">Telegram Chat ID</div>
+      <input class="config-input" type="text" id="cfg-tg-chat" placeholder="Your chat ID from @userinfobot">
+    </div>
+
+    <div class="config-section">
+      <div class="config-section-label">ntfy Topic</div>
+      <input class="config-input" type="text" id="cfg-ntfy" placeholder="e.g. ebosetale-lot-7x3k">
+      <div class="config-status" id="ntfy-status"></div>
+    </div>
+
+    <button class="config-save" onclick="saveConfig()">Save & Connect</button>
+    <button class="config-close" onclick="closeConfig()">Cancel</button>
+  </div>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-  // State
-  let items = JSON.parse(localStorage.getItem('parking-lot') || '[]');
-  let activeTab = 'text';
-  let currentFilter = 'all';
-  let pendingImages = []; // {dataUrl, name}
-  let pendingAudios = []; // {blob, url, name}
-  let mediaRecorder = null;
-  let recordingChunks = [];
-  let recordingTimer = null;
-  let recordingSeconds = 0;
-  let isRecording = false;
+// ── State ──────────────────────────────────────────────
+let items = JSON.parse(localStorage.getItem('pl-items') || '[]');
+let config = JSON.parse(localStorage.getItem('pl-config') || '{}');
+let activeFilter = 'all';
+let activeTab = 'text';
+let pendingImages = [];
+let pendingAudios = [];
+let mediaRecorder = null;
+let recordingChunks = [];
+let recordingTimer = null;
+let recordingSecs = 0;
+let isRecording = false;
+let alarmAudio = null;
+let alarmItemId = null;
+let alarmingNow = new Set();
+let warnedItems = new Set(); // tracks -10min warnings already sent
+const SCRIPT_URL = config.webapp || '';
 
-  // Init
-  render();
-  checkReminders();
-  setInterval(checkReminders, 60000);
-  buildProjectDatalist();
+// ── Init ───────────────────────────────────────────────
+render();
+buildProjectList();
+updateSyncBadge('local');
+setInterval(tick, 30000);
+tick();
 
-  // Tab switching
-  function switchTab(tab) {
-    activeTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-    document.querySelectorAll('.input-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById(`panel-${tab}`).classList.add('active');
-  }
+// Request notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
 
-  // Reminder shortcuts
-  function setReminder(minutes) {
-    const d = new Date(Date.now() + minutes * 60000);
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-      .toISOString().slice(0, 16);
-    document.getElementById('reminder-input').value = local;
-  }
+// ── Tick: check reminders every 30s ───────────────────
+function tick() {
+  const now = Date.now();
+  items.forEach(item => {
+    if (item.done || !item.reminder) return;
+    const rt = new Date(item.reminder).getTime();
+    const diff = rt - now; // ms remaining
 
-  // Image handling
-  function handleDragOver(e) {
-    e.preventDefault();
-    document.getElementById('drop-zone').classList.add('dragover');
-  }
-
-  function handleDragLeave(e) {
-    document.getElementById('drop-zone').classList.remove('dragover');
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    document.getElementById('drop-zone').classList.remove('dragover');
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    addImages(files);
-  }
-
-  function handleImageFiles(e) {
-    addImages(Array.from(e.target.files));
-    e.target.value = '';
-  }
-
-  function addImages(files) {
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        pendingImages.push({ dataUrl: e.target.result, name: file.name });
-        renderImagePreviews();
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function renderImagePreviews() {
-    const container = document.getElementById('image-previews');
-    container.innerHTML = pendingImages.map((img, i) => `
-      <div class="image-thumb">
-        <img src="${img.dataUrl}" alt="${img.name}">
-        <button class="remove-img" onclick="removeImage(${i})">×</button>
-      </div>
-    `).join('');
-  }
-
-  function removeImage(i) {
-    pendingImages.splice(i, 1);
-    renderImagePreviews();
-  }
-
-  // Voice recording
-  async function toggleRecording() {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      await startRecording();
-    }
-  }
-
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      recordingChunks = [];
-
-      mediaRecorder.ondataavailable = e => {
-        if (e.data.size > 0) recordingChunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordingChunks, { type: 'audio/webm' });
-        const url = URL.createObjectURL(blob);
-        const name = `voice-${Date.now()}.webm`;
-        pendingAudios.push({ blob, url, name });
-        renderRecordingsList();
-        stream.getTracks().forEach(t => t.stop());
-      };
-
-      mediaRecorder.start();
-      isRecording = true;
-      recordingSeconds = 0;
-
-      const btn = document.getElementById('record-btn');
-      btn.classList.add('recording');
-      btn.textContent = '⏹️';
-      document.getElementById('voice-status').textContent = 'Recording...';
-      document.getElementById('voice-status').classList.add('active');
-      document.getElementById('voice-timer').classList.add('visible');
-      document.getElementById('waveform').classList.add('visible');
-
-      recordingTimer = setInterval(() => {
-        recordingSeconds++;
-        const m = Math.floor(recordingSeconds / 60);
-        const s = recordingSeconds % 60;
-        document.getElementById('voice-timer').textContent =
-          `${m}:${s.toString().padStart(2, '0')}`;
-      }, 1000);
-
-    } catch (err) {
-      showToast('Microphone access denied');
-    }
-  }
-
-  function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-    }
-    clearInterval(recordingTimer);
-    isRecording = false;
-
-    const btn = document.getElementById('record-btn');
-    btn.classList.remove('recording');
-    btn.textContent = '🎙️';
-    document.getElementById('voice-status').textContent = 'Click to record';
-    document.getElementById('voice-status').classList.remove('active');
-    document.getElementById('voice-timer').classList.remove('visible');
-    document.getElementById('waveform').classList.remove('visible');
-  }
-
-  function renderRecordingsList() {
-    const container = document.getElementById('recordings-list');
-    container.innerHTML = pendingAudios.map((a, i) => `
-      <div class="recording-item">
-        <span>🎙️ clip ${i + 1}</span>
-        <audio controls src="${a.url}"></audio>
-        <button class="remove-rec" onclick="removeRecording(${i})">✕</button>
-      </div>
-    `).join('');
-  }
-
-  function removeRecording(i) {
-    pendingAudios.splice(i, 1);
-    renderRecordingsList();
-  }
-
-  // Park
-  async function parkIdea() {
-    const text = document.getElementById('text-input').value.trim();
-    const type = document.getElementById('type-select').value;
-    const project = document.getElementById('project-input').value.trim();
-    const reminderVal = document.getElementById('reminder-input').value;
-
-    if (!text && pendingImages.length === 0 && pendingAudios.length === 0) {
-      showToast('Nothing to park yet.');
-      return;
-    }
-
-    // Convert pending audios to base64 for storage
-    const audioData = await Promise.all(pendingAudios.map(a =>
-      blobToBase64(a.blob).then(b64 => ({ b64, name: a.name }))
-    ));
-
-    const item = {
-      id: Date.now(),
-      text,
-      type,
-      project,
-      reminder: reminderVal ? new Date(reminderVal).toISOString() : null,
-      images: pendingImages.map(i => i.dataUrl),
-      audios: audioData,
-      createdAt: new Date().toISOString(),
-      done: false,
-    };
-
-    items.unshift(item);
-    save();
-    render();
-    buildProjectDatalist();
-
-    // Reset
-    document.getElementById('text-input').value = '';
-    document.getElementById('project-input').value = '';
-    document.getElementById('reminder-input').value = '';
-    pendingImages = [];
-    pendingAudios = [];
-    renderImagePreviews();
-    renderRecordingsList();
-    switchTab('text');
-
-    showToast('Parked. Back to work.');
-  }
-
-  function blobToBase64(blob) {
-    return new Promise(res => {
-      const r = new FileReader();
-      r.onload = () => res(r.result.split(',')[1]);
-      r.readAsDataURL(blob);
-    });
-  }
-
-  // Filter
-  function setFilter(filter, btn) {
-    currentFilter = filter;
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    render();
-  }
-
-  // Render
-  function render() {
-    const grid = document.getElementById('items-grid');
-    const now = new Date();
-
-    let visible = items.filter(item => {
-      if (currentFilter === 'all') return !item.done;
-      if (currentFilter === 'overdue') {
-        return !item.done && item.reminder && new Date(item.reminder) < now;
+    // -10min warning (between 10m30s and 9m30s out)
+    if (diff > 0 && diff <= 630000 && diff > 570000) {
+      if (!warnedItems.has(item.id + '-10')) {
+        warnedItems.add(item.id + '-10');
+        sendSoftAlert(item);
       }
-      return !item.done && item.type === currentFilter;
-    });
-
-    // Count badge
-    const total = items.filter(i => !i.done).length;
-    document.getElementById('count-badge').textContent =
-      `${total} parked`;
-
-    // Overdue count
-    const overdueCount = items.filter(i =>
-      !i.done && i.reminder && new Date(i.reminder) < now
-    ).length;
-    const overdueBtn = document.getElementById('overdue-filter');
-    if (overdueCount > 0) {
-      overdueBtn.innerHTML = `⏰ Overdue <span class="overdue-count">${overdueCount}</span>`;
-    } else {
-      overdueBtn.innerHTML = `⏰ Overdue`;
     }
 
-    if (visible.length === 0) {
-      grid.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">🅿️</div>
-          ${currentFilter === 'all'
-            ? 'Lot is empty.<br>Dump your first thought.'
-            : `No ${currentFilter}s parked.`}
-        </div>`;
-      return;
-    }
-
-    grid.innerHTML = visible.map(item => {
-      const created = new Date(item.createdAt);
-      const timeAgo = formatTimeAgo(created);
-      const isOverdue = item.reminder && new Date(item.reminder) < now;
-      const reminderText = item.reminder
-        ? formatReminder(new Date(item.reminder), isOverdue)
-        : null;
-
-      const typeEmoji = { idea: '💡', bug: '🐛', task: '✅', note: '📝' };
-
-      return `
-        <div class="lot-item" data-type="${item.type}" data-id="${item.id}">
-          <div class="item-header">
-            <span class="type-badge ${item.type}">${typeEmoji[item.type]} ${item.type}</span>
-            ${item.project ? `<span class="item-project">${item.project}</span>` : ''}
-            <span class="item-time">${timeAgo}</span>
-          </div>
-
-          ${item.text ? `<div class="item-text">${escHtml(item.text)}</div>` : ''}
-
-          ${item.images.length > 0 || item.audios.length > 0 ? `
-            <div class="item-attachments">
-              ${item.images.map(src => `
-                <img class="attach-thumb" src="${src}" onclick="openImage('${src}')" alt="attachment">
-              `).join('')}
-              ${item.audios.map((a, i) => `
-                <div class="attach-audio">
-                  🎙️
-                  <audio controls src="data:audio/webm;base64,${a.b64}"></audio>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
-
-          ${reminderText ? `
-            <div class="item-reminder ${isOverdue ? 'overdue' : ''}">
-              <span class="reminder-icon">⏰</span>
-              ${reminderText}
-            </div>
-          ` : ''}
-
-          <div class="item-footer">
-            <button class="done-btn" onclick="markDone(${item.id})">✓ Done with this</button>
-            <button class="delete-btn" onclick="deleteItem(${item.id})">✕ Delete</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  function formatTimeAgo(date) {
-    const diff = Date.now() - date.getTime();
-    const m = Math.floor(diff / 60000);
-    if (m < 1) return 'just now';
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    const d = Math.floor(h / 24);
-    return `${d}d ago`;
-  }
-
-  function formatReminder(date, overdue) {
-    const diff = date.getTime() - Date.now();
-    if (overdue) {
-      const ago = Math.abs(diff);
-      const m = Math.floor(ago / 60000);
-      if (m < 60) return `Overdue by ${m}m`;
-      const h = Math.floor(m / 60);
-      return `Overdue by ${h}h`;
-    }
-    const m = Math.floor(diff / 60000);
-    if (m < 60) return `Remind in ${m}m`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `Remind in ${h}h`;
-    return `Remind ${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
-  }
-
-  function markDone(id) {
-    const item = items.find(i => i.id === id);
-    if (item) { item.done = true; save(); render(); showToast('Cleared.'); }
-  }
-
-  function deleteItem(id) {
-    items = items.filter(i => i.id !== id);
-    save();
-    render();
-  }
-
-  function openImage(src) {
-    window.open(src, '_blank');
-  }
-
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-              .replace(/"/g,'&quot;').replace(/\n/g,'<br>');
-  }
-
-  // Reminders
-  function checkReminders() {
-    const now = new Date();
-    items.forEach(item => {
-      if (!item.done && item.reminder && !item._notified) {
-        const rt = new Date(item.reminder);
-        if (rt <= now) {
-          item._notified = true;
-          if (Notification.permission === 'granted') {
-            new Notification('Parking Lot', {
-              body: `${item.type.toUpperCase()}: ${item.text || '(attachment)'}`,
-              icon: '🅿️'
-            });
-          }
-        }
+    // -1min alarm (between 1m30s and 0)
+    if (diff > 0 && diff <= 90000) {
+      if (!alarmingNow.has(item.id + '-1')) {
+        alarmingNow.add(item.id + '-1');
+        triggerHardAlarm(item);
       }
-    });
-    render();
-  }
-
-  // Request notification permission silently
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-
-  // Project datalist
-  function buildProjectDatalist() {
-    const projects = [...new Set(items.map(i => i.project).filter(Boolean))];
-    document.getElementById('projects-list').innerHTML =
-      projects.map(p => `<option value="${p}">`).join('');
-  }
-
-  // Save
-  function save() {
-    try {
-      localStorage.setItem('parking-lot', JSON.stringify(items));
-    } catch(e) {
-      // Storage full — trim oldest done items
-      items = items.filter(i => !i.done).slice(0, 100);
-      localStorage.setItem('parking-lot', JSON.stringify(items));
     }
-  }
 
-  // Toast
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
-  }
-
-  // Keyboard shortcut: Ctrl+Enter to park
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') parkIdea();
+    // Exactly overdue (within 30s window)
+    if (diff <= 0 && diff > -30000) {
+      if (!alarmingNow.has(item.id + '-0')) {
+        alarmingNow.add(item.id + '-0');
+        triggerHardAlarm(item);
+      }
+    }
   });
+  render(); // refresh countdowns
+}
+
+// ── Soft alert (-10min) ────────────────────────────────
+function sendSoftAlert(item) {
+  // Browser notification
+  if (Notification.permission === 'granted') {
+    new Notification('Parking Lot — 10 minutes', {
+      body: `${item.type.toUpperCase()}: ${item.text || '(attachment)'}${item.project ? ' · ' + item.project : ''}`,
+      icon: '🅿️'
+    });
+  }
+
+  // ntfy (if configured)
+  if (config.ntfy) {
+    fetch(`https://ntfy.sh/${encodeURIComponent(config.ntfy)}`, {
+      method: 'POST',
+      headers: {
+        'Title': 'Parking Lot — 10 min warning',
+        'Priority': '3',
+        'Tags': 'stopwatch'
+      },
+      body: `${item.type.toUpperCase()}: ${item.text || '(attachment)'}${item.project ? ' · ' + item.project : ''}`
+    }).catch(() => {});
+  }
+
+  // Telegram (if configured)
+  if (config.tgToken && config.tgChat) {
+    const msg = `🅿️ *10-minute warning*\n\n*${item.type.toUpperCase()}*: ${item.text || '(attachment)'}${item.project ? '\n_Project: ' + item.project + '_' : ''}`;
+    fetch(`https://api.telegram.org/bot${config.tgToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: config.tgChat, text: msg, parse_mode: 'Markdown' })
+    }).catch(() => {});
+  }
+
+  showToast(`⏰ 10 min warning sent — ${item.text ? item.text.slice(0,30) : 'attachment'}…`);
+}
+
+// ── Hard alarm (-1min / due) ───────────────────────────
+function triggerHardAlarm(item) {
+  alarmItemId = item.id;
+
+  // Browser overlay + sound
+  document.getElementById('alarm-title').textContent = item.text || '(voice/image note)';
+  document.getElementById('alarm-project').textContent = item.project ? `Project: ${item.project}` : '';
+  const isUrgent = new Date(item.reminder).getTime() - Date.now() > 0;
+  document.getElementById('alarm-label').textContent = isUrgent ? '1 MINUTE' : 'TIME\'S UP';
+  document.getElementById('alarm-overlay').classList.add('active');
+  playAlarmSound();
+
+  // ntfy urgent
+  if (config.ntfy) {
+    fetch(`https://ntfy.sh/${encodeURIComponent(config.ntfy)}`, {
+      method: 'POST',
+      headers: {
+        'Title': isUrgent ? '⚠️ 1 MINUTE LEFT' : '🔴 TIME\'S UP',
+        'Priority': '5',
+        'Tags': 'rotating_light'
+      },
+      body: `${item.type.toUpperCase()}: ${item.text || '(attachment)'}${item.project ? ' · ' + item.project : ''}`
+    }).catch(() => {});
+  }
+
+  // Telegram urgent
+  if (config.tgToken && config.tgChat) {
+    const msg = isUrgent
+      ? `⚠️ *1 MINUTE REMAINING*\n\n*${item.type.toUpperCase()}*: ${item.text || '(attachment)'}${item.project ? '\n_Project: ' + item.project + '_' : ''}`
+      : `🔴 *TIME IS UP*\n\n*${item.type.toUpperCase()}*: ${item.text || '(attachment)'}${item.project ? '\n_Project: ' + item.project + '_' : ''}`;
+    fetch(`https://api.telegram.org/bot${config.tgToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: config.tgChat, text: msg, parse_mode: 'Markdown' })
+    }).catch(() => {});
+  }
+}
+
+// ── Alarm sound (Web Audio API — no files needed) ──────
+function playAlarmSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let rep = 0;
+    function beep() {
+      if (rep++ > 20) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.25);
+      if (document.getElementById('alarm-overlay').classList.contains('active')) {
+        setTimeout(beep, 600);
+      }
+    }
+    beep();
+    alarmAudio = ctx;
+  } catch(e) {}
+}
+
+function dismissAlarm() {
+  document.getElementById('alarm-overlay').classList.remove('active');
+  if (alarmAudio) { try { alarmAudio.close(); } catch(e) {} alarmAudio = null; }
+}
+
+// ── FAB & Modal ────────────────────────────────────────
+function toggleModal() {
+  const fab = document.getElementById('fab');
+  const modal = document.getElementById('capture-modal');
+  const backdrop = document.getElementById('modal-backdrop');
+  const isOpen = modal.classList.contains('open');
+  if (isOpen) { closeModal(); } else {
+    fab.classList.add('open');
+    modal.classList.add('open');
+    backdrop.classList.add('open');
+    setTimeout(() => document.getElementById('text-input').focus(), 400);
+  }
+}
+
+function closeModal() {
+  document.getElementById('fab').classList.remove('open');
+  document.getElementById('capture-modal').classList.remove('open');
+  document.getElementById('modal-backdrop').classList.remove('open');
+}
+
+// ── Tabs ───────────────────────────────────────────────
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.input-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ── Reminder shortcuts ─────────────────────────────────
+function setReminder(mins) {
+  const d = new Date(Date.now() + mins * 60000);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+  document.getElementById('reminder-input').value = local;
+}
+
+// ── Image handling ─────────────────────────────────────
+function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
+function handleDragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  addImages(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+}
+function handleImageFiles(e) { addImages(Array.from(e.target.files)); e.target.value = ''; }
+
+function addImages(files) {
+  files.forEach(f => {
+    const r = new FileReader();
+    r.onload = e => { pendingImages.push({ dataUrl: e.target.result, name: f.name }); renderImgPreviews(); };
+    r.readAsDataURL(f);
+  });
+}
+
+function renderImgPreviews() {
+  document.getElementById('img-previews').innerHTML = pendingImages.map((img,i) => `
+    <div class="img-thumb-wrap">
+      <img src="${img.dataUrl}" alt="">
+      <button class="img-thumb-remove" onclick="removeImg(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeImg(i) { pendingImages.splice(i,1); renderImgPreviews(); }
+
+// ── Voice recording ────────────────────────────────────
+async function toggleRecording() {
+  isRecording ? stopRecording() : await startRecording();
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    recordingChunks = [];
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordingChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordingChunks, { type: 'audio/webm' });
+      pendingAudios.push({ blob, url: URL.createObjectURL(blob), name: `clip-${Date.now()}.webm` });
+      renderRecordings();
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    recordingSecs = 0;
+    document.getElementById('record-ring').classList.add('recording');
+    document.getElementById('record-icon').textContent = '⏹';
+    document.getElementById('voice-label').textContent = 'Recording…';
+    document.getElementById('voice-label').classList.add('active');
+    document.getElementById('voice-timer').classList.add('visible');
+    document.getElementById('waveform').classList.add('active');
+    recordingTimer = setInterval(() => {
+      recordingSecs++;
+      const m = Math.floor(recordingSecs/60), s = recordingSecs%60;
+      document.getElementById('voice-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    }, 1000);
+  } catch(e) { showToast('Microphone access denied.'); }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  clearInterval(recordingTimer);
+  isRecording = false;
+  document.getElementById('record-ring').classList.remove('recording');
+  document.getElementById('record-icon').textContent = '🎙';
+  document.getElementById('voice-label').textContent = 'Tap to record';
+  document.getElementById('voice-label').classList.remove('active');
+  document.getElementById('voice-timer').classList.remove('visible');
+  document.getElementById('waveform').classList.remove('active');
+}
+
+function renderRecordings() {
+  document.getElementById('recordings-stack').innerHTML = pendingAudios.map((a,i) => `
+    <div class="rec-item">
+      <span>🎙 clip ${i+1}</span>
+      <audio controls src="${a.url}"></audio>
+      <button class="rec-remove" onclick="removeRec(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeRec(i) { pendingAudios.splice(i,1); renderRecordings(); }
+
+// ── Park it ────────────────────────────────────────────
+async function parkIt() {
+  const text = document.getElementById('text-input').value.trim();
+  if (!text && !pendingImages.length && !pendingAudios.length) {
+    showToast('Nothing to park.'); return;
+  }
+
+  const audios = await Promise.all(pendingAudios.map(a =>
+    blobToB64(a.blob).then(b64 => ({ b64, name: a.name }))
+  ));
+
+  const item = {
+    id: Date.now(),
+    text,
+    type: document.getElementById('type-select').value,
+    project: document.getElementById('project-input').value.trim(),
+    reminder: document.getElementById('reminder-input').value
+      ? new Date(document.getElementById('reminder-input').value).toISOString() : null,
+    images: pendingImages.map(i => i.dataUrl),
+    audios,
+    createdAt: new Date().toISOString(),
+    done: false
+  };
+
+  items.unshift(item);
+  save();
+
+  // Sync to Apps Script if configured
+  if (config.webapp) syncToSheet(item);
+
+  resetModal();
+  closeModal();
+  render();
+  buildProjectList();
+  showToast('Parked. Back to work.');
+}
+
+function blobToB64(blob) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.readAsDataURL(blob);
+  });
+}
+
+function resetModal() {
+  document.getElementById('text-input').value = '';
+  document.getElementById('project-input').value = '';
+  document.getElementById('reminder-input').value = '';
+  document.getElementById('type-select').value = 'idea';
+  pendingImages = []; pendingAudios = [];
+  renderImgPreviews(); renderRecordings();
+  switchTab('text', document.querySelector('.modal-tab'));
+}
+
+// ── Sync to Google Sheet ───────────────────────────────
+async function syncToSheet(item) {
+  if (!config.webapp) return;
+  updateSyncBadge('syncing');
+  try {
+    const payload = {
+      action: 'park',
+      id: item.id,
+      text: item.text,
+      type: item.type,
+      project: item.project,
+      reminder: item.reminder,
+      createdAt: item.createdAt,
+      hasImages: item.images.length > 0,
+      hasAudios: item.audios.length > 0
+    };
+    await fetch(config.webapp, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    updateSyncBadge('synced');
+  } catch(e) {
+    updateSyncBadge('offline');
+  }
+}
+
+async function syncDoneToSheet(id) {
+  if (!config.webapp) return;
+  try {
+    await fetch(config.webapp, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'done', id })
+    });
+  } catch(e) {}
+}
+
+async function fetchFromSheet() {
+  if (!config.webapp) return;
+  updateSyncBadge('syncing');
+  try {
+    const res = await fetch(config.webapp + '?action=list');
+    const data = await res.json();
+    if (data.items && Array.isArray(data.items)) {
+      // Merge: sheet items take precedence for done status
+      const sheetMap = {};
+      data.items.forEach(i => { sheetMap[i.id] = i; });
+      items = items.map(local => sheetMap[local.id]
+        ? { ...local, done: sheetMap[local.id].done }
+        : local
+      );
+      // Add any sheet items not local
+      data.items.forEach(si => {
+        if (!items.find(l => l.id == si.id)) items.unshift({ ...si, images: [], audios: [] });
+      });
+      save();
+      render();
+    }
+    updateSyncBadge('synced');
+  } catch(e) {
+    updateSyncBadge('offline');
+  }
+}
+
+// ── Mark done & delete ─────────────────────────────────
+function markDone(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  item.done = true;
+  save();
+  render();
+  syncDoneToSheet(id);
+  showToast('Cleared.');
+}
+
+function deleteItem(id) {
+  items = items.filter(i => i.id !== id);
+  save();
+  render();
+}
+
+// ── Filter ─────────────────────────────────────────────
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// ── Render ─────────────────────────────────────────────
+function render() {
+  const now = Date.now();
+  const emojis = { idea:'💡', bug:'🐛', task:'✅', note:'📝' };
+
+  const overdueCount = items.filter(i => !i.done && i.reminder && new Date(i.reminder).getTime() < now).length;
+  const overduePill = document.getElementById('overdue-pill');
+  overduePill.textContent = overdueCount > 0 ? `⏰ Overdue (${overdueCount})` : '⏰ Overdue';
+
+  const activeCount = items.filter(i => !i.done).length;
+  document.getElementById('count-pill').textContent = activeCount;
+
+  let visible = items.filter(i => {
+    if (i.done) return false;
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'overdue') return i.reminder && new Date(i.reminder).getTime() < now;
+    return i.type === activeFilter;
+  });
+
+  const feed = document.getElementById('feed');
+
+  if (!visible.length) {
+    feed.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🅿️</div>
+        <div class="empty-label">${activeFilter === 'all' ? 'Lot is empty.' : 'Nothing here.'}</div>
+        <div class="empty-sub">${activeFilter === 'all' ? 'Tap + to park a thought.' : `No ${activeFilter}s parked.`}</div>
+      </div>`;
+    return;
+  }
+
+  feed.innerHTML = visible.map(item => {
+    const rt = item.reminder ? new Date(item.reminder).getTime() : null;
+    const diff = rt ? rt - now : null;
+    const isOverdue = rt && diff < 0;
+    const isUrgent = rt && diff > 0 && diff <= 90000;
+    const isWarn = rt && diff > 0 && diff <= 630000 && !isUrgent;
+
+    let reminderHtml = '';
+    if (rt) {
+      let cls = 'reminder-pill';
+      let label = '';
+      if (isOverdue) {
+        cls += ' overdue';
+        const ago = Math.abs(diff);
+        const m = Math.floor(ago/60000);
+        label = `⏰ Overdue by ${m < 60 ? m+'m' : Math.floor(m/60)+'h'}`;
+      } else if (isUrgent) {
+        cls += ' urgent';
+        const s = Math.ceil(diff/1000);
+        label = `⏰ ${s < 60 ? s+'s' : '1m'} remaining`;
+      } else if (isWarn) {
+        cls += ' warn';
+        const m = Math.ceil(diff/60000);
+        label = `⏰ ${m}m remaining`;
+      } else {
+        const m = Math.ceil(diff/60000);
+        if (m < 60) label = `⏰ in ${m}m`;
+        else if (m < 1440) label = `⏰ in ${Math.floor(m/60)}h`;
+        else label = `⏰ ${new Date(rt).toLocaleDateString([], {month:'short',day:'numeric'})} ${new Date(rt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
+      }
+      reminderHtml = `<div class="${cls}">${label}</div>`;
+    }
+
+    const attachHtml = (item.images.length || item.audios.length) ? `
+      <div class="card-attachments">
+        ${item.images.map(src => `<img class="attach-img" src="${src}" onclick="window.open('${src}','_blank')">`).join('')}
+        ${item.audios.map((a,idx) => `
+          <div class="attach-audio-pill">
+            🎙 <audio controls src="data:audio/webm;base64,${a.b64}"></audio>
+          </div>`).join('')}
+      </div>` : '';
+
+    const ago = formatAgo(new Date(item.createdAt));
+
+    return `
+      <div class="park-card${isOverdue ? ' overdue' : ''}" data-type="${item.type}" data-id="${item.id}">
+        <div class="card-top">
+          <span class="type-tag ${item.type}">${emojis[item.type]} ${item.type}</span>
+          ${item.project ? `<span class="project-label">${escHtml(item.project)}</span>` : ''}
+          <span class="card-time">${ago}</span>
+        </div>
+        ${item.text ? `<div class="card-text">${escHtml(item.text)}</div>` : ''}
+        ${attachHtml}
+        ${reminderHtml}
+        <div class="card-footer">
+          <button class="card-action done-action" onclick="markDone(${item.id})">✓ Done</button>
+          <button class="card-action delete-action" onclick="deleteItem(${item.id})">Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Helpers ────────────────────────────────────────────
+function formatAgo(date) {
+  const d = Date.now() - date.getTime();
+  const m = Math.floor(d/60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m/60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function save() {
+  try { localStorage.setItem('pl-items', JSON.stringify(items)); }
+  catch(e) { items = items.filter(i=>!i.done).slice(0,80); localStorage.setItem('pl-items', JSON.stringify(items)); }
+}
+
+function buildProjectList() {
+  const projs = [...new Set(items.map(i => i.project).filter(Boolean))];
+  document.getElementById('project-list').innerHTML = projs.map(p => `<option value="${p}">`).join('');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Sync badge ─────────────────────────────────────────
+function updateSyncBadge(state) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = 'sync-dot';
+  if (state === 'synced') { dot.classList.add(''); label.textContent = 'Synced'; }
+  else if (state === 'syncing') { dot.classList.add('syncing'); label.textContent = 'Syncing…'; }
+  else if (state === 'offline') { dot.classList.add('offline'); label.textContent = 'Offline'; }
+  else { label.textContent = 'Local'; }
+}
+
+// ── Config ─────────────────────────────────────────────
+function openConfig() {
+  document.getElementById('cfg-webapp').value = config.webapp || '';
+  document.getElementById('cfg-tg-token').value = config.tgToken || '';
+  document.getElementById('cfg-tg-chat').value = config.tgChat || '';
+  document.getElementById('cfg-ntfy').value = config.ntfy || '';
+  document.getElementById('config-modal').classList.add('open');
+}
+
+function closeConfig() { document.getElementById('config-modal').classList.remove('open'); }
+
+function saveConfig() {
+  config = {
+    webapp: document.getElementById('cfg-webapp').value.trim(),
+    tgToken: document.getElementById('cfg-tg-token').value.trim(),
+    tgChat: document.getElementById('cfg-tg-chat').value.trim(),
+    ntfy: document.getElementById('cfg-ntfy').value.trim()
+  };
+  localStorage.setItem('pl-config', JSON.stringify(config));
+  closeConfig();
+
+  if (config.ntfy) {
+    document.getElementById('ntfy-status').textContent = `Subscribe to topic "${config.ntfy}" in the ntfy app.`;
+  }
+
+  if (config.webapp) {
+    updateSyncBadge('syncing');
+    fetchFromSheet().then(() => showToast('Connected & synced.'));
+  } else {
+    updateSyncBadge('local');
+    showToast('Config saved.');
+  }
+}
+
+// ── Keyboard shortcut: Ctrl+Enter = park ───────────────
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') parkIt();
+  if (e.key === 'Escape') { closeModal(); closeConfig(); dismissAlarm(); }
+});
+
+// Auto-sync if webapp configured
+if (config.webapp) {
+  fetchFromSheet();
+  setInterval(fetchFromSheet, 120000); // pull every 2 minutes
+}
 </script>
 </body>
 </html>
